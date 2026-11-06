@@ -349,7 +349,7 @@
 </style>
 </head>
 <body>
-<div class="tag">v0.7</div>
+<div class="tag">v0.7.1</div>
 <main>
   <header>
     <h1>Job Fit Checker &amp; Resume Customizer</h1>
@@ -545,7 +545,7 @@
     '2. Never cap, sample, skip, summarise or merge requirements. If the job post lists 40 items, return 40. Keep two similar requirements as two separate entries. Split a sentence that contains several distinct requirements into one entry per requirement.',
     '3. For each requirement set "importance": "must" if the post says required, must, essential, minimum, needed, or states it as a plain expectation without softening; "nice" if the post says preferred, nice to have, a plus, bonus, ideally, or an advantage.',
     '4. For each requirement set "match" by checking the CV only: "yes" if the CV clearly shows it, "partial" if the CV shows something related or only part of it, "no" if the CV shows nothing relevant.',
-    '5. For "evidence" copy ONE exact quote from the CV that proves the match, character for character, from the CV text. Do not paraphrase, fix spelling, or join separate pieces. Keep the quote short (one phrase or sentence). If match is "no", evidence must be an empty string "".',
+    '5. For "evidence" copy ONE exact quote from the CV that proves the match, character for character, from the CV text. Do not paraphrase, fix spelling, or join separate pieces. Keep the quote short: one phrase from ONE line of the CV, 3 to 15 words, never spanning two lines or bullets, and without "..." or bullet symbols. Copy it straight from the CV text, do not retype it from memory. Judge the match by what the CV shows, and always give a quote for every "yes" or "partial". If match is "no", evidence must be an empty string "".',
     '6. Never invent anything that is not written in the CV.',
     'Reply with JSON only, in exactly this shape:',
     '{"role":"","company":"","requirements":[{"requirement":"","importance":"must|nice","match":"yes|partial|no","evidence":"exact quote copied from the CV, or empty"}]}',
@@ -632,7 +632,18 @@
   // ---- exact jobs in plain code ----
   var APPLY_AT = 80, SKIP_BELOW = 50;
 
-  function flat(t){ return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  // lowercase and collapse spaces; also treat curly quotes, long dashes, bullets and invisible
+  // characters as their plain versions, so a copy-paste artefact does not zero a real match
+  function flat(t){
+    return String(t || '').toLowerCase()
+      .replace(/[‘’‛′]/g, "'")
+      .replace(/[“”‟″]/g, '"')
+      .replace(/[‐-―−]/g, '-')
+      .replace(/…/g, '...')
+      .replace(/[​-‍⁠﻿­]/g, '')
+      .replace(/[•▪●◦·‣⁃]/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+  }
 
   // a quote counts only if it appears in the CV after lowercasing and collapsing spaces
   function quoteFound(cv, quote){
@@ -908,7 +919,7 @@
     'You compare ONE CV with a FIXED list of job requirements.',
     'Return the same list: the same number of entries, the same order, the exact same requirement text and the same importance. Never add, remove, skip or merge entries.',
     'For each entry set "match": "yes" if the CV clearly shows it, "partial" if it shows something related or only part of it, "no" if it shows nothing relevant.',
-    'For "evidence" copy ONE exact quote from the CV, character for character. Do not paraphrase or join pieces. If match is "no", evidence must be an empty string "".',
+    'For "evidence" copy ONE exact quote from the CV, character for character: one phrase from ONE line, 3 to 15 words, never spanning two lines, without "..." or bullet symbols. Do not paraphrase or join pieces. Always give a quote for every "yes" or "partial". If match is "no", evidence must be an empty string "".',
     'Reply with JSON only, in exactly this shape:',
     '{"role":"","company":"","requirements":[{"requirement":"","importance":"must|nice","match":"yes|partial|no","evidence":"exact quote copied from the CV, or empty"}]}'
   ].join('\n');
